@@ -83,13 +83,8 @@ function renderTime(root, str) {
   }
 }
 
-function partsInTZ(date, tz) {
-  const f = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz,
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-  }).formatToParts(date);
+function partsInTZ(date, tz, opts) {
+  const f = new Intl.DateTimeFormat('en-US', { timeZone: tz, ...opts }).formatToParts(date);
   const out = {};
   for (const p of f) out[p.type] = p.value;
   return out;
@@ -97,15 +92,23 @@ function partsInTZ(date, tz) {
 
 function tick() {
   const now = new Date();
-  const p = partsInTZ(now, TZ);
 
+  const t = partsInTZ(now, TZ, { hour12: false, hour: '2-digit', minute: '2-digit' });
   // Display hours in 12-hour, zero-padded, no AM/PM marker (matches mock).
-  let h = parseInt(p.hour, 10);
-  const display12 = ((h + 11) % 12) + 1; // 0->12, 13->1
+  const h24 = parseInt(t.hour, 10);
+  const display12 = ((h24 + 11) % 12) + 1; // 0->12, 13->1
   const hh = String(display12).padStart(2, '0');
-  renderTime($('time'), `${hh}:${p.minute}`);
+  renderTime($('time'), `${hh}:${t.minute}`);
 
-  $('greeting').textContent = `${greetingFor(h)}, ${NAME}`;
+  $('greeting').textContent = `${greetingFor(h24)}, ${NAME}`;
+
+  // "Saturday, April 25" — calendar-style line under the greeting.
+  const d = partsInTZ(now, TZ, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+  $('date').textContent = `${d.weekday}, ${d.month} ${d.day}`;
 }
 
 // ---- weather ----------------------------------------------------------------
@@ -169,15 +172,19 @@ async function loadWeather() {
     `https://api.open-meteo.com/v1/forecast` +
     `?latitude=${WEATHER.lat}&longitude=${WEATHER.lon}` +
     `&current=temperature_2m,weather_code` +
+    `&daily=temperature_2m_max,temperature_2m_min` +
     `&temperature_unit=fahrenheit&timezone=${encodeURIComponent(TZ)}`;
   try {
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('weather http ' + res.status);
     const data = await res.json();
     const t = Math.round(data.current.temperature_2m);
+    const hi = Math.round(data.daily.temperature_2m_max[0]);
+    const lo = Math.round(data.daily.temperature_2m_min[0]);
     const desc = describeWeather(data.current.weather_code);
     $('weather-temp').innerHTML = `${t}&deg;`;
     $('weather-icon').innerHTML = iconSvg(desc.icon);
+    $('weather-range').innerHTML = `H ${hi}&deg; &nbsp; L ${lo}&deg;`;
   } catch {
     $('weather-icon').innerHTML = iconSvg('cloud');
   }

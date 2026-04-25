@@ -37,13 +37,13 @@
   <body class="bg-bg text-ink-900 font-sans antialiased overflow-hidden">
     <main
       id="dashboard"
-      class="relative w-[1024px] h-[600px] mx-auto flex flex-col items-center"
+      class="relative w-[1024px] h-[600px] mx-auto px-12 flex flex-col items-center justify-center text-center"
     >
-      <!-- greeting -->
-      <p
-        id="greeting"
-        class="mt-14 text-3xl font-medium text-ink-700 tracking-tight"
-      >
+      <!-- greeting + date -->
+      <p id="greeting" class="text-3xl font-medium text-ink-700 tracking-tight">
+        &nbsp;
+      </p>
+      <p id="date" class="mt-2 text-base font-medium uppercase tracking-[0.25em] text-ink-500">
         &nbsp;
       </p>
 
@@ -51,17 +51,20 @@
       <h1
         id="time"
         aria-label="current time"
-        class="mt-6 font-bold tracking-[-0.04em] text-[200px] leading-none text-ink-900 select-none"
+        class="my-6 font-bold tracking-[-0.04em] text-[180px] leading-none text-ink-900 select-none"
       ></h1>
 
-      <!-- weather pill under clock -->
-      <div class="mt-6 flex items-center gap-2 text-ink-700 text-2xl font-medium">
+      <!-- weather: icon · temp · highs & lows -->
+      <div class="flex items-center gap-3 text-ink-700 text-2xl font-medium">
         <span id="weather-icon" class="inline-flex w-7 h-7 items-center justify-center"></span>
         <span id="weather-temp">--&deg;</span>
+        <span id="weather-range" class="ml-3 text-lg text-ink-400 font-normal tracking-wide">
+          H --&deg; &nbsp; L --&deg;
+        </span>
       </div>
 
-      <!-- next game block, anchored toward the bottom -->
-      <section class="mt-auto mb-12 text-center">
+      <!-- next game -->
+      <section class="mt-10">
         <p class="text-[11px] tracking-[0.3em] uppercase text-ink-500 font-semibold">
           Next Game
         </p>
