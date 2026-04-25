@@ -85,8 +85,12 @@
         aria-label="Show game stats"
         class="mt-10 rounded-2xl px-6 py-3 transition-colors hover:bg-black/[0.035] active:bg-black/[0.06]"
       >
-        <p id="game-label" class="text-[11px] tracking-[0.3em] uppercase text-ink-500 font-semibold">
-          Next Game
+        <p id="game-label" class="flex items-center justify-center gap-1.5 text-[11px] tracking-[0.3em] uppercase text-ink-500 font-semibold">
+          <svg viewBox="0 0 24 24" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M3 12c4 0 7-3 7-9M21 12c-4 0-7-3-7-9M3 12c4 0 7 3 7 9M21 12c-4 0-7 3-7 9"/>
+          </svg>
+          <span id="game-label-text">Next Game</span>
         </p>
         <p id="game-title" class="mt-2 text-2xl font-semibold tracking-tight text-ink-900">
           Houston Rockets vs. Dallas Mavericks
@@ -95,6 +99,9 @@
           Sun, Apr 26 &bull; 8:30 PM CDT
         </p>
       </div>
+
+      <!-- recent results (last 2 games) -->
+      <div id="recents" class="mt-3 flex items-center gap-2 min-h-[36px]"></div>
 
       <!-- stats overlay (hidden by default) -->
       <div

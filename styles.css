@@ -115,6 +115,60 @@ body {
   outline-offset: 4px;
 }
 
+/* ---------- recent results chips ---------- */
+.recent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.04);
+  color: #3f3f46;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+.recent-chip:hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+.recent-chip:active {
+  transform: scale(0.97);
+}
+.recent-chip .rc-result {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0;
+}
+.recent-chip .rc-result.w {
+  background: #16a34a;
+}
+.recent-chip .rc-result.l {
+  background: #dc2626;
+}
+.recent-chip .rc-score {
+  font-variant-numeric: tabular-nums;
+  color: #0f0f10;
+  font-weight: 600;
+}
+.recent-chip .rc-dash {
+  margin: 0 2px;
+  color: #a1a1aa;
+}
+.recent-chip .rc-opp {
+  color: #71717a;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
 /* ---------- stats overlay ---------- */
 #overlay {
   opacity: 0;
@@ -135,51 +189,129 @@ body {
   opacity: 1;
 }
 
+/* Card sizing — leave room for everything but allow scroll if dense. */
+#overlay-card {
+  max-height: 552px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+#overlay-card::-webkit-scrollbar {
+  width: 6px;
+}
+#overlay-card::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+}
+
+/* Status pill (LIVE / FINAL / Sun, Apr 26 …) */
 #overlay-content .status-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: #71717a;
   font-weight: 600;
 }
+#overlay-content .status-line svg {
+  width: 10px;
+  height: 10px;
+}
+#overlay-content .status-line.live {
+  color: #dc2626;
+}
+#overlay-content .status-line.live svg {
+  color: #dc2626;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+/* Matchup row: logo · name · score · name · logo */
 #overlay-content .matchup {
-  margin-top: 6px;
-  display: flex;
-  align-items: baseline;
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
   gap: 16px;
-  font-size: 22px;
+}
+#overlay-content .team-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+#overlay-content .matchup > .team-cell:last-child {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+#overlay-content .matchup > .team-cell:last-child .team-name-wrap {
+  align-items: flex-end;
+}
+#overlay-content .team-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+#overlay-content .team-name-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+#overlay-content .team-name {
   font-weight: 600;
+  font-size: 18px;
   color: #0f0f10;
   letter-spacing: -0.01em;
-  flex-wrap: wrap;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-#overlay-content .matchup .team {
-  flex: 0 1 auto;
-}
-#overlay-content .matchup .score {
-  font-variant-numeric: tabular-nums;
-  font-size: 28px;
-  color: #0f0f10;
-}
-#overlay-content .matchup .sep {
+#overlay-content .team-record {
+  font-size: 12px;
   color: #a1a1aa;
+  margin-top: 2px;
 }
-#overlay-content .matchup .vs {
-  color: #71717a;
+#overlay-content .score-block {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+#overlay-content .score-block .score {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0f0f10;
+  letter-spacing: -0.02em;
+}
+#overlay-content .score-block .sep {
+  color: #d4d4d8;
+  font-size: 28px;
+}
+#overlay-content .score-block .vs {
+  color: #a1a1aa;
+  font-size: 18px;
   font-weight: 500;
 }
 
+/* Linescore */
 #overlay-content .linescore {
-  margin-top: 24px;
+  margin-top: 22px;
   width: 100%;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
 }
 #overlay-content .linescore th,
 #overlay-content .linescore td {
-  padding: 10px 8px;
+  padding: 8px 6px;
   text-align: center;
-  font-size: 16px;
+  font-size: 15px;
 }
 #overlay-content .linescore th {
   font-size: 10px;
@@ -202,41 +334,115 @@ body {
   border-top: 1px solid rgba(0, 0, 0, 0.04);
 }
 
-#overlay-content .leaders {
-  margin-top: 24px;
-}
+/* Section labels w/ icon */
 #overlay-content .section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 10px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: #a1a1aa;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
-#overlay-content .leader-row {
-  display: flex;
-  gap: 12px;
-  align-items: baseline;
-  padding: 6px 0;
+#overlay-content .section-label svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Top performers — three rows of [name | line | label | line | name] */
+#overlay-content .perf-block {
+  margin-top: 22px;
+}
+#overlay-content .perf-row {
+  display: grid;
+  grid-template-columns: 1fr 56px 1fr;
+  align-items: center;
+  padding: 8px 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-  font-size: 15px;
 }
-#overlay-content .leader-row:last-child {
+#overlay-content .perf-row:last-child {
   border-bottom: 0;
 }
-#overlay-content .leader-row .abbr {
-  width: 44px;
-  font-weight: 600;
-  color: #71717a;
-  font-size: 12px;
-  letter-spacing: 0.1em;
+#overlay-content .perf-side {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
-#overlay-content .leader-row .who {
-  flex: 1;
+#overlay-content .perf-side.right {
+  align-items: flex-end;
+  text-align: right;
+}
+#overlay-content .perf-side .who {
+  font-weight: 600;
+  font-size: 14px;
+  color: #0f0f10;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+#overlay-content .perf-side .line {
+  font-size: 12px;
+  color: #71717a;
+  font-variant-numeric: tabular-nums;
+  margin-top: 1px;
+}
+#overlay-content .perf-cat {
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #a1a1aa;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Team stats — 2-column grid of comparison rows */
+#overlay-content .ts-block {
+  margin-top: 22px;
+}
+#overlay-content .ts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 32px;
+  row-gap: 4px;
+}
+#overlay-content .ts-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  font-size: 14px;
+}
+#overlay-content .ts-row .val {
+  font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: #0f0f10;
 }
-#overlay-content .leader-row .line {
-  color: #3f3f46;
-  font-variant-numeric: tabular-nums;
+#overlay-content .ts-row .val.right {
+  text-align: right;
+}
+#overlay-content .ts-row .lbl {
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #a1a1aa;
+  font-weight: 700;
+  padding: 0 14px;
+}
+
+/* Venue line */
+#overlay-content .venue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 22px;
+  font-size: 12px;
+  color: #71717a;
+}
+#overlay-content .venue svg {
+  width: 12px;
+  height: 12px;
 }

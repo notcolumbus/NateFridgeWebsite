@@ -174,14 +174,63 @@ function fmtGameWhen(iso) {
   return `${date} · ${time}`;
 }
 
-function pickGame(events) {
-  // Prefer the next upcoming game; fall back to the most recent past game.
+function competitorOf(comp, teamId) {
+  return comp?.competitors?.find((c) => c.team.id === String(teamId));
+}
+function opponentOf(comp, teamId) {
+  return comp?.competitors?.find((c) => c.team.id !== String(teamId));
+}
+
+function pickGames(events) {
+  // Returns { featured, recent[] } — the next game (or most recent if season is
+  // over) plus the last 2 *completed* games before today.
   const now = Date.now();
   const sorted = [...(events || [])].sort(
     (a, b) => new Date(a.date) - new Date(b.date)
   );
-  const upcoming = sorted.find((e) => new Date(e.date).getTime() > now - 3 * 3600_000);
-  return upcoming || sorted[sorted.length - 1] || null;
+  const completed = sorted.filter(
+    (e) => e.competitions?.[0]?.status?.type?.completed
+  );
+  const upcoming = sorted.find(
+    (e) =>
+      !e.competitions?.[0]?.status?.type?.completed &&
+      new Date(e.date).getTime() > now - 3 * 3600_000
+  );
+  const featured = upcoming || completed[completed.length - 1] || null;
+  // Last 2 completed games, most recent first; skip the featured one if it
+  // happens to be the most recent completed game.
+  const recent = completed
+    .slice(-3)
+    .reverse()
+    .filter((e) => e.id !== featured?.id)
+    .slice(0, 2);
+  return { featured, recent };
+}
+
+function renderRecents(games) {
+  const root = $('recents');
+  root.innerHTML = '';
+  for (const g of games) {
+    const comp = g.competitions?.[0];
+    if (!comp) continue;
+    const us = competitorOf(comp, TEAM_ID);
+    const them = opponentOf(comp, TEAM_ID);
+    if (!us || !them) continue;
+    const won = parseInt(us.score, 10) > parseInt(them.score, 10);
+    const sep = us.homeAway === 'home' ? 'vs' : '@';
+
+    const chip = document.createElement('button');
+    chip.className = 'recent-chip';
+    chip.dataset.eventId = g.id;
+    chip.setAttribute('aria-label', 'Show stats for previous game');
+    chip.innerHTML = `
+      <span class="rc-result ${won ? 'w' : 'l'}">${won ? 'W' : 'L'}</span>
+      <span class="rc-score">${us.score}<span class="rc-dash">–</span>${them.score}</span>
+      <span class="rc-opp">${sep} ${them.team.abbreviation}</span>
+    `;
+    chip.addEventListener('click', () => openStats(g.id));
+    root.appendChild(chip);
+  }
 }
 
 async function loadGame() {
@@ -189,37 +238,39 @@ async function loadGame() {
     const res = await fetch(ESPN.schedule, { cache: 'no-store' });
     if (!res.ok) throw new Error('schedule http ' + res.status);
     const data = await res.json();
-    const game = pickGame(data.events);
-    if (!game) return;
+    const { featured, recent } = pickGames(data.events);
 
-    const comp = game.competitions?.[0];
-    if (!comp) return;
-    const us = comp.competitors.find((c) => c.team.id === String(TEAM_ID));
-    const them = comp.competitors.find((c) => c.team.id !== String(TEAM_ID));
-    const completed = comp.status?.type?.completed;
+    if (featured) {
+      const comp = featured.competitions?.[0];
+      const us = competitorOf(comp, TEAM_ID);
+      const them = opponentOf(comp, TEAM_ID);
+      const completed = comp?.status?.type?.completed;
 
-    const card = $('game-card');
-    card.dataset.eventId = game.id;
+      const card = $('game-card');
+      card.dataset.eventId = featured.id;
 
-    if (completed) {
-      const won = parseInt(us.score, 10) > parseInt(them.score, 10);
-      $('game-label').textContent = 'Last Game';
-      $('game-title').textContent =
-        `${us.team.displayName} ${us.score} – ${them.score} ${them.team.displayName}`;
-      const d = new Date(game.date).toLocaleDateString('en-US', {
-        timeZone: TZ,
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      });
-      $('game-when').textContent = `${won ? 'W' : 'L'} · ${d}`;
-    } else {
-      const sep = us.homeAway === 'home' ? 'vs.' : '@';
-      $('game-label').textContent = 'Next Game';
-      $('game-title').textContent =
-        `${us.team.displayName} ${sep} ${them.team.displayName}`;
-      $('game-when').textContent = fmtGameWhen(game.date);
+      if (completed) {
+        const won = parseInt(us.score, 10) > parseInt(them.score, 10);
+        $('game-label-text').textContent = 'Last Game';
+        $('game-title').textContent =
+          `${us.team.displayName} ${us.score} – ${them.score} ${them.team.displayName}`;
+        const d = new Date(featured.date).toLocaleDateString('en-US', {
+          timeZone: TZ,
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+        });
+        $('game-when').textContent = `${won ? 'W' : 'L'} · ${d}`;
+      } else {
+        const sep = us.homeAway === 'home' ? 'vs.' : '@';
+        $('game-label-text').textContent = 'Next Game';
+        $('game-title').textContent =
+          `${us.team.displayName} ${sep} ${them.team.displayName}`;
+        $('game-when').textContent = fmtGameWhen(featured.date);
+      }
     }
+
+    renderRecents(recent);
   } catch {
     // Keep the static fallback already in the markup.
   }
@@ -242,6 +293,33 @@ function closeOverlay() {
   }, 200);
 }
 
+// Tiny inline icons used inside the stats overlay.
+const STAT_ICON = {
+  trophy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4zM5 6H3a3 3 0 0 0 4 3M19 6h2a3 3 0 0 1-4 3"/></svg>`,
+  chart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>`,
+  pin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>`,
+  dot: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>`,
+};
+
+const PERF_CATS = [
+  { key: 'points', label: 'PTS' },
+  { key: 'rebounds', label: 'REB' },
+  { key: 'assists', label: 'AST' },
+];
+
+const TEAM_STAT_FIELDS = [
+  { name: 'fieldGoalPct', label: 'FG%' },
+  { name: 'threePointFieldGoalPct', label: '3P%' },
+  { name: 'freeThrowPct', label: 'FT%' },
+  { name: 'rebounds', label: 'REB' },
+  { name: 'assists', label: 'AST' },
+  { name: 'turnovers', label: 'TO' },
+];
+
+function findStat(team, name) {
+  return team?.statistics?.find((s) => s.name === name);
+}
+
 function renderStats(data) {
   const comp = data?.header?.competitions?.[0];
   if (!comp) {
@@ -253,9 +331,37 @@ function renderStats(data) {
   const away = comp.competitors.find((c) => c.homeAway === 'away');
   const status = comp.status?.type;
   const detail = status?.shortDetail || status?.description || '';
+  const isLive = status?.state === 'in';
+  const completed = status?.completed;
+
+  const teamCell = (t) => `
+    <div class="team-cell">
+      <img class="team-logo" alt="" src="${t.team.logo || ''}" onerror="this.style.display='none'" />
+      <div class="team-name-wrap">
+        <span class="team-name">${t.team.shortDisplayName || t.team.name}</span>
+        ${t.records?.[0]?.summary
+          ? `<span class="team-record">${t.records[0].summary}</span>`
+          : ''}
+      </div>
+    </div>`;
+
+  const matchupHTML = `
+    <div class="matchup">
+      ${teamCell(away)}
+      <div class="score-block">
+        ${
+          completed || away.score
+            ? `<span class="score">${away.score ?? ''}</span>
+               <span class="sep">–</span>
+               <span class="score">${home.score ?? ''}</span>`
+            : `<span class="vs">@</span>`
+        }
+      </div>
+      ${teamCell(home)}
+    </div>`;
 
   // Linescore — only present once a game has tipped off.
-  let linescore = '';
+  let linescoreHTML = '';
   const hasLines =
     Array.isArray(home.linescores) && home.linescores.length > 0 &&
     Array.isArray(away.linescores) && away.linescores.length > 0;
@@ -270,7 +376,7 @@ function renderStats(data) {
         ${team.linescores.map((l) => `<td>${l.value}</td>`).join('')}
         <td class="total">${team.score}</td>
       </tr>`;
-    linescore = `
+    linescoreHTML = `
       <table class="linescore">
         <thead>
           <tr><th></th>${head.map((h) => `<th>${h}</th>`).join('')}<th>T</th></tr>
@@ -279,52 +385,100 @@ function renderStats(data) {
       </table>`;
   }
 
-  // Top performers, when ESPN provides them.
-  let leaders = '';
-  if (Array.isArray(data.leaders) && data.leaders.length) {
-    const lines = [];
-    for (const teamLead of data.leaders) {
-      const ptsLead = teamLead.leaders?.find((l) => l.name === 'points');
-      const top = ptsLead?.leaders?.[0];
-      if (top?.athlete) {
-        lines.push(
-          `<div class="leader-row">
-            <span class="abbr">${teamLead.team.abbreviation}</span>
-            <span class="who">${top.athlete.shortName}</span>
-            <span class="line">${top.displayValue}</span>
-          </div>`
-        );
-      }
-    }
-    if (lines.length) {
-      leaders = `<div class="leaders">
-        <p class="section-label">Top Performers</p>
-        ${lines.join('')}
-      </div>`;
+  // Top performers across PTS / REB / AST per team.
+  let performersHTML = '';
+  if (Array.isArray(data.leaders) && data.leaders.length === 2) {
+    const findTopFor = (teamId, key) => {
+      const teamLead = data.leaders.find((l) => l.team.id === String(teamId));
+      const cat = teamLead?.leaders?.find((c) => c.name === key);
+      return cat?.leaders?.[0];
+    };
+    const rows = PERF_CATS.map(({ key, label }) => {
+      const a = findTopFor(away.team.id, key);
+      const h = findTopFor(home.team.id, key);
+      if (!a?.athlete || !h?.athlete) return '';
+      return `
+        <div class="perf-row">
+          <div class="perf-side">
+            <span class="who">${a.athlete.shortName}</span>
+            <span class="line">${a.displayValue}</span>
+          </div>
+          <div class="perf-cat">${label}</div>
+          <div class="perf-side right">
+            <span class="line">${h.displayValue}</span>
+            <span class="who">${h.athlete.shortName}</span>
+          </div>
+        </div>`;
+    })
+      .filter(Boolean)
+      .join('');
+    if (rows) {
+      performersHTML = `
+        <div class="perf-block">
+          <p class="section-label">${STAT_ICON.trophy}<span>Top Performers</span></p>
+          ${rows}
+        </div>`;
     }
   }
 
-  // Header line: scheduled vs final.
-  const scoreLine = comp.status?.type?.completed || hasLines
-    ? `<span class="score">${away.score}</span>
-       <span class="sep">–</span>
-       <span class="score">${home.score}</span>`
-    : `<span class="vs">${away.homeAway === 'away' ? '@' : 'vs.'}</span>`;
+  // Team stats comparison.
+  let teamStatsHTML = '';
+  const boxTeams = data.boxscore?.teams;
+  if (Array.isArray(boxTeams) && boxTeams.length === 2) {
+    const awayBox = boxTeams.find((t) => t.team.id === away.team.id) || boxTeams[0];
+    const homeBox = boxTeams.find((t) => t.team.id === home.team.id) || boxTeams[1];
+    const rows = TEAM_STAT_FIELDS.map(({ name, label }) => {
+      const a = findStat(awayBox, name);
+      const h = findStat(homeBox, name);
+      if (!a || !h) return '';
+      return `
+        <div class="ts-row">
+          <span class="val">${a.displayValue}</span>
+          <span class="lbl">${label}</span>
+          <span class="val right">${h.displayValue}</span>
+        </div>`;
+    })
+      .filter(Boolean)
+      .join('');
+    if (rows) {
+      teamStatsHTML = `
+        <div class="ts-block">
+          <p class="section-label">${STAT_ICON.chart}<span>Team Stats</span></p>
+          <div class="ts-grid">${rows}</div>
+        </div>`;
+    }
+  }
+
+  // Venue / location.
+  const venue = data.gameInfo?.venue?.fullName;
+  const city = data.gameInfo?.venue?.address?.city;
+  const venueText = [venue, city].filter(Boolean).join(' · ');
+  const venueHTML = venueText
+    ? `<p class="venue">${STAT_ICON.pin}<span>${venueText}</span></p>`
+    : '';
+
+  // Status pill (LIVE / FINAL / scheduled).
+  const statusClass = isLive ? 'live' : completed ? 'final' : 'sched';
+  const statusHTML = `
+    <p class="status-line ${statusClass}">
+      ${isLive ? STAT_ICON.dot : ''}
+      <span>${detail}</span>
+    </p>`;
 
   $('overlay-content').innerHTML = `
-    <p class="status-line">${detail}</p>
-    <div class="matchup">
-      <span class="team">${away.team.displayName}</span>
-      ${scoreLine}
-      <span class="team">${home.team.displayName}</span>
-    </div>
-    ${linescore}
-    ${leaders}
+    ${statusHTML}
+    ${matchupHTML}
+    ${linescoreHTML}
+    ${performersHTML}
+    ${teamStatsHTML}
+    ${venueHTML}
   `;
 }
 
-async function openStats() {
-  const eventId = $('game-card').dataset.eventId;
+async function openStats(eventIdArg) {
+  const eventId =
+    (typeof eventIdArg === 'string' && eventIdArg) ||
+    $('game-card').dataset.eventId;
   openOverlay();
   $('overlay-content').innerHTML = `<p class="text-ink-500">Loading stats…</p>`;
   if (!eventId) {
@@ -343,7 +497,7 @@ async function openStats() {
   }
 }
 
-$('game-card').addEventListener('click', openStats);
+$('game-card').addEventListener('click', () => openStats());
 $('game-card').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault();
