@@ -156,6 +156,19 @@ async function loadWeather() {
 
 // ---- rockets schedule + stats ----------------------------------------------
 
+// ESPN sometimes returns competitor.score as a string ("112") and sometimes as
+// an object ({ value: 112, displayValue: "112" }). Normalize to a string.
+function scoreOf(s) {
+  if (s == null) return '';
+  if (typeof s === 'number' || typeof s === 'string') return String(s);
+  if (typeof s === 'object') return String(s.displayValue ?? s.value ?? '');
+  return '';
+}
+function scoreNum(s) {
+  const n = parseInt(scoreOf(s), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function fmtGameWhen(iso) {
   // "Sun, Apr 26 · 8:30 PM EDT"
   const d = new Date(iso);
@@ -216,7 +229,9 @@ function renderRecents(games) {
     const us = competitorOf(comp, TEAM_ID);
     const them = opponentOf(comp, TEAM_ID);
     if (!us || !them) continue;
-    const won = parseInt(us.score, 10) > parseInt(them.score, 10);
+    const usScore = scoreOf(us.score);
+    const themScore = scoreOf(them.score);
+    const won = scoreNum(us.score) > scoreNum(them.score);
     const sep = us.homeAway === 'home' ? 'vs' : '@';
 
     const chip = document.createElement('button');
@@ -225,7 +240,7 @@ function renderRecents(games) {
     chip.setAttribute('aria-label', 'Show stats for previous game');
     chip.innerHTML = `
       <span class="rc-result ${won ? 'w' : 'l'}">${won ? 'W' : 'L'}</span>
-      <span class="rc-score">${us.score}<span class="rc-dash">–</span>${them.score}</span>
+      <span class="rc-score">${usScore}<span class="rc-dash">–</span>${themScore}</span>
       <span class="rc-opp">${sep} ${them.team.abbreviation}</span>
     `;
     chip.addEventListener('click', () => openStats(g.id));
@@ -250,10 +265,12 @@ async function loadGame() {
       card.dataset.eventId = featured.id;
 
       if (completed) {
-        const won = parseInt(us.score, 10) > parseInt(them.score, 10);
+        const usScore = scoreOf(us.score);
+        const themScore = scoreOf(them.score);
+        const won = scoreNum(us.score) > scoreNum(them.score);
         $('game-label-text').textContent = 'Last Game';
         $('game-title').textContent =
-          `${us.team.displayName} ${us.score} – ${them.score} ${them.team.displayName}`;
+          `${us.team.displayName} ${usScore} – ${themScore} ${them.team.displayName}`;
         const d = new Date(featured.date).toLocaleDateString('en-US', {
           timeZone: TZ,
           weekday: 'short',
@@ -345,15 +362,18 @@ function renderStats(data) {
       </div>
     </div>`;
 
+  const awayScore = scoreOf(away.score);
+  const homeScore = scoreOf(home.score);
+  const showScore = completed || awayScore || homeScore;
   const matchupHTML = `
     <div class="matchup">
       ${teamCell(away)}
       <div class="score-block">
         ${
-          completed || away.score
-            ? `<span class="score">${away.score ?? ''}</span>
+          showScore
+            ? `<span class="score">${awayScore}</span>
                <span class="sep">–</span>
-               <span class="score">${home.score ?? ''}</span>`
+               <span class="score">${homeScore}</span>`
             : `<span class="vs">@</span>`
         }
       </div>
@@ -374,7 +394,7 @@ function renderStats(data) {
       <tr>
         <td class="abbr">${team.team.abbreviation}</td>
         ${team.linescores.map((l) => `<td>${l.value}</td>`).join('')}
-        <td class="total">${team.score}</td>
+        <td class="total">${scoreOf(team.score)}</td>
       </tr>`;
     linescoreHTML = `
       <table class="linescore">
