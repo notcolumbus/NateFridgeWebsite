@@ -393,7 +393,7 @@ function renderStats(data) {
     const row = (team) => `
       <tr>
         <td class="abbr">${team.team.abbreviation}</td>
-        ${team.linescores.map((l) => `<td>${l.value}</td>`).join('')}
+        ${team.linescores.map((l) => `<td>${scoreOf(l)}</td>`).join('')}
         <td class="total">${scoreOf(team.score)}</td>
       </tr>`;
     linescoreHTML = `
