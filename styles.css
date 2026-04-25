@@ -1,4 +1,4 @@
-/* Lightweight extras on top of Tailwind. */
+/* Janney fridge dashboard — light theme, kiosk-tuned. */
 
 html,
 body {
@@ -11,39 +11,97 @@ body {
 
 body {
   background:
-    radial-gradient(1200px 600px at 80% -10%, rgba(231, 200, 122, 0.06), transparent 60%),
-    radial-gradient(900px 600px at -10% 110%, rgba(99, 102, 241, 0.08), transparent 60%),
-    #06060a;
+    radial-gradient(1100px 540px at 80% -10%, rgba(0, 0, 0, 0.025), transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, rgba(0, 0, 0, 0.03), transparent 60%),
+    #f4f4f5;
 }
 
-/* Fit & center on a 1024x600 panel without scrollbars. */
 #dashboard {
   box-sizing: border-box;
 }
 
-/* Glass card style for the bottom tiles. */
-.card {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.04),
-    rgba(255, 255, 255, 0.015)
-  );
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 10px 30px rgba(0, 0, 0, 0.35);
-}
-
-/* Subtle pulse for the time digits when they tick. */
-#time {
-  font-feature-settings: 'tnum' 1, 'lnum' 1;
-}
-
-/* Disable text selection on a kiosk display. */
+/* No selection / tap highlight on a kiosk display. */
 * {
   -webkit-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- morphing time digits ---------- */
+
+#time {
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+}
+
+/* Each character — digit or colon — sits in a fixed-width, overflow-clipped slot
+   so we can stack the outgoing + incoming glyphs and morph between them. */
+.slot {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+  overflow: visible;
+}
+.slot[data-char='0'],
+.slot[data-char='1'],
+.slot[data-char='2'],
+.slot[data-char='3'],
+.slot[data-char='4'],
+.slot[data-char='5'],
+.slot[data-char='6'],
+.slot[data-char='7'],
+.slot[data-char='8'],
+.slot[data-char='9'] {
+  width: 0.62em; /* tabular-ish width for proportional digits */
+  text-align: center;
+}
+.slot[data-char=':'] {
+  width: 0.32em;
+  text-align: center;
+}
+
+/* The glyph itself — the .cur copy is the one currently showing. */
+.glyph {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+  transition:
+    opacity 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.glyph.stack {
+  position: absolute;
+  inset: 0;
+}
+
+/* Incoming glyph: starts blurred + below, lands sharp at center. */
+.glyph.enter {
+  opacity: 0;
+  filter: blur(18px);
+  transform: translateY(0.18em) scale(0.92);
+}
+.glyph.enter-active {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0) scale(1);
+}
+
+/* Outgoing glyph: dissolves up and blurs out. */
+.glyph.exit {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0) scale(1);
+}
+.glyph.exit-active {
+  opacity: 0;
+  filter: blur(18px);
+  transform: translateY(-0.18em) scale(1.06);
+}
+
+/* ---------- weather glyph sizing ---------- */
+#weather-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
 }
