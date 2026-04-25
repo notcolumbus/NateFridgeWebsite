@@ -3,16 +3,15 @@
 const TZ = 'America/New_York';
 const NAME = 'Mr. Janney';
 
-// Weather location. Open-Meteo, free, no API key.
-const WEATHER = {
-  lat: 38.9072,
-  lon: -77.0369,
-};
+// Open-Meteo: free, no API key. Default location is Washington, DC.
+const WEATHER = { lat: 38.9072, lon: -77.0369 };
 
-// Next Rockets game (hardcoded — edit when the schedule moves).
-const NEXT_GAME = {
-  title: 'Houston Rockets vs. Dallas Mavericks',
-  when: 'Sun, Apr 26 • 8:30 PM CDT',
+// ESPN team id for the Houston Rockets.
+const TEAM_ID = 10;
+const ESPN = {
+  schedule: `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/${TEAM_ID}/schedule`,
+  summary: (id) =>
+    `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${id}`,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -28,9 +27,7 @@ function greetingFor(hour) {
 
 // ---- morphing clock ---------------------------------------------------------
 
-// Build the digit/colon slots once. Then we mutate each slot's glyph in place,
-// using an enter/exit pair so digits blur-morph into each other.
-const TIME_PATTERN = ['d', 'd', ':', 'd', 'd']; // hh:mm
+const TIME_PATTERN = ['d', 'd', ':', 'd', 'd'];
 
 function buildClock(root) {
   root.innerHTML = '';
@@ -47,14 +44,10 @@ function buildClock(root) {
 }
 
 function setSlot(slot, ch) {
-  // No-op when the character hasn't changed.
   const cur = slot.querySelector('.glyph.cur');
   if (cur && cur.textContent === ch) return;
-
-  // Update slot width hint for digits 0-9 vs colons.
   slot.dataset.char = ch;
 
-  // Outgoing copy: clone what's there, layer it on top, animate it out.
   if (cur) {
     const out = cur.cloneNode(true);
     out.classList.remove('cur');
@@ -65,22 +58,18 @@ function setSlot(slot, ch) {
     cur.remove();
   }
 
-  // Incoming copy: starts blurred + below, settles into place.
   const next = document.createElement('span');
   next.className = 'glyph cur enter';
   next.textContent = ch;
   slot.appendChild(next);
-  requestAnimationFrame(() => {
-    // Two RAFs so the initial 'enter' state actually paints before transition.
-    requestAnimationFrame(() => next.classList.add('enter-active'));
-  });
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => next.classList.add('enter-active'))
+  );
 }
 
 function renderTime(root, str) {
   const slots = root.querySelectorAll('.slot');
-  for (let i = 0; i < slots.length && i < str.length; i++) {
-    setSlot(slots[i], str[i]);
-  }
+  for (let i = 0; i < slots.length && i < str.length; i++) setSlot(slots[i], str[i]);
 }
 
 function partsInTZ(date, tz, opts) {
@@ -92,22 +81,15 @@ function partsInTZ(date, tz, opts) {
 
 function tick() {
   const now = new Date();
-
   const t = partsInTZ(now, TZ, { hour12: false, hour: '2-digit', minute: '2-digit' });
-  // Display hours in 12-hour, zero-padded, no AM/PM marker (matches mock).
   const h24 = parseInt(t.hour, 10);
-  const display12 = ((h24 + 11) % 12) + 1; // 0->12, 13->1
+  const display12 = ((h24 + 11) % 12) + 1;
   const hh = String(display12).padStart(2, '0');
   renderTime($('time'), `${hh}:${t.minute}`);
 
   $('greeting').textContent = `${greetingFor(h24)}, ${NAME}`;
 
-  // "Saturday, April 25" — calendar-style line under the greeting.
-  const d = partsInTZ(now, TZ, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
+  const d = partsInTZ(now, TZ, { weekday: 'long', month: 'long', day: 'numeric' });
   $('date').textContent = `${d.weekday}, ${d.month} ${d.day}`;
 }
 
@@ -133,35 +115,17 @@ function iconSvg(name) {
     'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
   switch (name) {
     case 'sun':
-      return `<svg viewBox="0 0 24 24" ${s}>
-        <circle cx="12" cy="12" r="4"/>
-        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-      </svg>`;
+      return `<svg viewBox="0 0 24 24" ${s}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`;
     case 'cloud-sun':
-      return `<svg viewBox="0 0 24 24" ${s}>
-        <circle cx="8" cy="8" r="3"/>
-        <path d="M8 1v1M1 8h1M2.5 2.5l.7.7M13.5 2.5l-.7.7"/>
-        <path d="M17 18a4 4 0 0 0-7.8-1.2A3 3 0 1 0 9 22h8a3 3 0 0 0 0-6h0z"/>
-      </svg>`;
+      return `<svg viewBox="0 0 24 24" ${s}><circle cx="8" cy="8" r="3"/><path d="M8 1v1M1 8h1M2.5 2.5l.7.7M13.5 2.5l-.7.7"/><path d="M17 18a4 4 0 0 0-7.8-1.2A3 3 0 1 0 9 22h8a3 3 0 0 0 0-6h0z"/></svg>`;
     case 'cloud':
-      return `<svg viewBox="0 0 24 24" ${s}>
-        <path d="M17 18a4 4 0 0 0-7.8-1.2A3.5 3.5 0 1 0 8 22h9a3 3 0 0 0 0-6h0z"/>
-      </svg>`;
+      return `<svg viewBox="0 0 24 24" ${s}><path d="M17 18a4 4 0 0 0-7.8-1.2A3.5 3.5 0 1 0 8 22h9a3 3 0 0 0 0-6h0z"/></svg>`;
     case 'rain':
-      return `<svg viewBox="0 0 24 24" ${s}>
-        <path d="M17 14a4 4 0 0 0-7.8-1.2A3.5 3.5 0 1 0 8 18h9a3 3 0 0 0 0-6h0z"/>
-        <path d="M8 20l-1 2M12 20l-1 2M16 20l-1 2"/>
-      </svg>`;
+      return `<svg viewBox="0 0 24 24" ${s}><path d="M17 14a4 4 0 0 0-7.8-1.2A3.5 3.5 0 1 0 8 18h9a3 3 0 0 0 0-6h0z"/><path d="M8 20l-1 2M12 20l-1 2M16 20l-1 2"/></svg>`;
     case 'snow':
-      return `<svg viewBox="0 0 24 24" ${s}>
-        <path d="M17 14a4 4 0 0 0-7.8-1.2A3.5 3.5 0 1 0 8 18h9a3 3 0 0 0 0-6h0z"/>
-        <path d="M9 21h.01M13 21h.01M17 21h.01"/>
-      </svg>`;
+      return `<svg viewBox="0 0 24 24" ${s}><path d="M17 14a4 4 0 0 0-7.8-1.2A3.5 3.5 0 1 0 8 18h9a3 3 0 0 0 0-6h0z"/><path d="M9 21h.01M13 21h.01M17 21h.01"/></svg>`;
     case 'storm':
-      return `<svg viewBox="0 0 24 24" ${s}>
-        <path d="M17 14a4 4 0 0 0-7.8-1.2A3.5 3.5 0 1 0 8 18h9a3 3 0 0 0 0-6h0z"/>
-        <path d="M12 18l-2 4h3l-1 2"/>
-      </svg>`;
+      return `<svg viewBox="0 0 24 24" ${s}><path d="M17 14a4 4 0 0 0-7.8-1.2A3.5 3.5 0 1 0 8 18h9a3 3 0 0 0 0-6h0z"/><path d="M12 18l-2 4h3l-1 2"/></svg>`;
     default:
       return '';
   }
@@ -190,16 +154,257 @@ async function loadWeather() {
   }
 }
 
+// ---- rockets schedule + stats ----------------------------------------------
+
+function fmtGameWhen(iso) {
+  // "Sun, Apr 26 · 8:30 PM EDT"
+  const d = new Date(iso);
+  const date = d.toLocaleDateString('en-US', {
+    timeZone: TZ,
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  const time = d.toLocaleTimeString('en-US', {
+    timeZone: TZ,
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  });
+  return `${date} · ${time}`;
+}
+
+function pickGame(events) {
+  // Prefer the next upcoming game; fall back to the most recent past game.
+  const now = Date.now();
+  const sorted = [...(events || [])].sort(
+    (a, b) => new Date(a.date) - new Date(b.date)
+  );
+  const upcoming = sorted.find((e) => new Date(e.date).getTime() > now - 3 * 3600_000);
+  return upcoming || sorted[sorted.length - 1] || null;
+}
+
+async function loadGame() {
+  try {
+    const res = await fetch(ESPN.schedule, { cache: 'no-store' });
+    if (!res.ok) throw new Error('schedule http ' + res.status);
+    const data = await res.json();
+    const game = pickGame(data.events);
+    if (!game) return;
+
+    const comp = game.competitions?.[0];
+    if (!comp) return;
+    const us = comp.competitors.find((c) => c.team.id === String(TEAM_ID));
+    const them = comp.competitors.find((c) => c.team.id !== String(TEAM_ID));
+    const completed = comp.status?.type?.completed;
+
+    const card = $('game-card');
+    card.dataset.eventId = game.id;
+
+    if (completed) {
+      const won = parseInt(us.score, 10) > parseInt(them.score, 10);
+      $('game-label').textContent = 'Last Game';
+      $('game-title').textContent =
+        `${us.team.displayName} ${us.score} – ${them.score} ${them.team.displayName}`;
+      const d = new Date(game.date).toLocaleDateString('en-US', {
+        timeZone: TZ,
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      });
+      $('game-when').textContent = `${won ? 'W' : 'L'} · ${d}`;
+    } else {
+      const sep = us.homeAway === 'home' ? 'vs.' : '@';
+      $('game-label').textContent = 'Next Game';
+      $('game-title').textContent =
+        `${us.team.displayName} ${sep} ${them.team.displayName}`;
+      $('game-when').textContent = fmtGameWhen(game.date);
+    }
+  } catch {
+    // Keep the static fallback already in the markup.
+  }
+}
+
+// ---- stats overlay ----------------------------------------------------------
+
+function openOverlay() {
+  const ov = $('overlay');
+  ov.classList.remove('hidden');
+  ov.classList.add('flex');
+  requestAnimationFrame(() => ov.classList.add('is-open'));
+}
+function closeOverlay() {
+  const ov = $('overlay');
+  ov.classList.remove('is-open');
+  setTimeout(() => {
+    ov.classList.add('hidden');
+    ov.classList.remove('flex');
+  }, 200);
+}
+
+function renderStats(data) {
+  const comp = data?.header?.competitions?.[0];
+  if (!comp) {
+    $('overlay-content').innerHTML =
+      `<p class="text-ink-500">Stats unavailable for this game.</p>`;
+    return;
+  }
+  const home = comp.competitors.find((c) => c.homeAway === 'home');
+  const away = comp.competitors.find((c) => c.homeAway === 'away');
+  const status = comp.status?.type;
+  const detail = status?.shortDetail || status?.description || '';
+
+  // Linescore — only present once a game has tipped off.
+  let linescore = '';
+  const hasLines =
+    Array.isArray(home.linescores) && home.linescores.length > 0 &&
+    Array.isArray(away.linescores) && away.linescores.length > 0;
+  if (hasLines) {
+    const cols = home.linescores.length;
+    const head = Array.from({ length: cols }, (_, i) =>
+      i < 4 ? `Q${i + 1}` : `OT${i - 3}`
+    );
+    const row = (team) => `
+      <tr>
+        <td class="abbr">${team.team.abbreviation}</td>
+        ${team.linescores.map((l) => `<td>${l.value}</td>`).join('')}
+        <td class="total">${team.score}</td>
+      </tr>`;
+    linescore = `
+      <table class="linescore">
+        <thead>
+          <tr><th></th>${head.map((h) => `<th>${h}</th>`).join('')}<th>T</th></tr>
+        </thead>
+        <tbody>${row(away)}${row(home)}</tbody>
+      </table>`;
+  }
+
+  // Top performers, when ESPN provides them.
+  let leaders = '';
+  if (Array.isArray(data.leaders) && data.leaders.length) {
+    const lines = [];
+    for (const teamLead of data.leaders) {
+      const ptsLead = teamLead.leaders?.find((l) => l.name === 'points');
+      const top = ptsLead?.leaders?.[0];
+      if (top?.athlete) {
+        lines.push(
+          `<div class="leader-row">
+            <span class="abbr">${teamLead.team.abbreviation}</span>
+            <span class="who">${top.athlete.shortName}</span>
+            <span class="line">${top.displayValue}</span>
+          </div>`
+        );
+      }
+    }
+    if (lines.length) {
+      leaders = `<div class="leaders">
+        <p class="section-label">Top Performers</p>
+        ${lines.join('')}
+      </div>`;
+    }
+  }
+
+  // Header line: scheduled vs final.
+  const scoreLine = comp.status?.type?.completed || hasLines
+    ? `<span class="score">${away.score}</span>
+       <span class="sep">–</span>
+       <span class="score">${home.score}</span>`
+    : `<span class="vs">${away.homeAway === 'away' ? '@' : 'vs.'}</span>`;
+
+  $('overlay-content').innerHTML = `
+    <p class="status-line">${detail}</p>
+    <div class="matchup">
+      <span class="team">${away.team.displayName}</span>
+      ${scoreLine}
+      <span class="team">${home.team.displayName}</span>
+    </div>
+    ${linescore}
+    ${leaders}
+  `;
+}
+
+async function openStats() {
+  const eventId = $('game-card').dataset.eventId;
+  openOverlay();
+  $('overlay-content').innerHTML = `<p class="text-ink-500">Loading stats…</p>`;
+  if (!eventId) {
+    $('overlay-content').innerHTML =
+      `<p class="text-ink-500">No game data available.</p>`;
+    return;
+  }
+  try {
+    const res = await fetch(ESPN.summary(eventId), { cache: 'no-store' });
+    if (!res.ok) throw new Error('summary http ' + res.status);
+    const data = await res.json();
+    renderStats(data);
+  } catch {
+    $('overlay-content').innerHTML =
+      `<p class="text-ink-500">Couldn't load stats — try again later.</p>`;
+  }
+}
+
+$('game-card').addEventListener('click', openStats);
+$('game-card').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    openStats();
+  }
+});
+$('overlay-backdrop').addEventListener('click', closeOverlay);
+$('overlay-close').addEventListener('click', closeOverlay);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeOverlay();
+});
+
+// ---- fullscreen toggle ------------------------------------------------------
+
+function isFullscreen() {
+  return !!(
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.msFullscreenElement
+  );
+}
+
+function syncFsIcon() {
+  const enter = $('fs-icon-enter');
+  const exit = $('fs-icon-exit');
+  if (isFullscreen()) {
+    enter.classList.add('hidden');
+    exit.classList.remove('hidden');
+  } else {
+    enter.classList.remove('hidden');
+    exit.classList.add('hidden');
+  }
+}
+
+$('fs-btn').addEventListener('click', async () => {
+  try {
+    if (!isFullscreen()) {
+      const el = document.documentElement;
+      await (el.requestFullscreen?.() ||
+        el.webkitRequestFullscreen?.() ||
+        el.msRequestFullscreen?.());
+    } else {
+      await (document.exitFullscreen?.() ||
+        document.webkitExitFullscreen?.() ||
+        document.msExitFullscreen?.());
+    }
+  } catch {
+    /* user canceled or browser blocked it */
+  }
+});
+
+document.addEventListener('fullscreenchange', syncFsIcon);
+document.addEventListener('webkitfullscreenchange', syncFsIcon);
+
 // ---- start ------------------------------------------------------------------
 
 buildClock($('time'));
-
-// Render the next-game text from config (overrides the static fallback).
-$('game-title').textContent = NEXT_GAME.title;
-$('game-when').textContent = NEXT_GAME.when;
-
 tick();
 loadWeather();
+loadGame();
 
 setInterval(tick, 1000);
 setInterval(loadWeather, 15 * 60 * 1000);
+setInterval(loadGame, 5 * 60 * 1000);

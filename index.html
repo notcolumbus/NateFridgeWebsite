@@ -39,6 +39,20 @@
       id="dashboard"
       class="relative w-[1024px] h-[600px] mx-auto px-12 flex flex-col items-center justify-center text-center"
     >
+      <!-- fullscreen toggle (top-right) -->
+      <button
+        id="fs-btn"
+        aria-label="Toggle fullscreen"
+        class="absolute top-4 right-4 z-20 w-10 h-10 rounded-full text-ink-500 hover:text-ink-900 hover:bg-black/5 active:bg-black/10 flex items-center justify-center transition-colors"
+      >
+        <svg id="fs-icon-enter" viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
+        </svg>
+        <svg id="fs-icon-exit" viewBox="0 0 24 24" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>
+        </svg>
+      </button>
+
       <!-- greeting + date -->
       <p id="greeting" class="text-3xl font-medium text-ink-700 tracking-tight">
         &nbsp;
@@ -63,9 +77,15 @@
         </span>
       </div>
 
-      <!-- next game -->
-      <section class="mt-10">
-        <p class="text-[11px] tracking-[0.3em] uppercase text-ink-500 font-semibold">
+      <!-- next game (clickable) -->
+      <div
+        id="game-card"
+        role="button"
+        tabindex="0"
+        aria-label="Show game stats"
+        class="mt-10 rounded-2xl px-6 py-3 transition-colors hover:bg-black/[0.035] active:bg-black/[0.06]"
+      >
+        <p id="game-label" class="text-[11px] tracking-[0.3em] uppercase text-ink-500 font-semibold">
           Next Game
         </p>
         <p id="game-title" class="mt-2 text-2xl font-semibold tracking-tight text-ink-900">
@@ -74,7 +94,32 @@
         <p id="game-when" class="mt-1 text-lg text-ink-500">
           Sun, Apr 26 &bull; 8:30 PM CDT
         </p>
-      </section>
+      </div>
+
+      <!-- stats overlay (hidden by default) -->
+      <div
+        id="overlay"
+        class="absolute inset-0 z-30 hidden items-center justify-center"
+      >
+        <div id="overlay-backdrop" class="absolute inset-0 bg-bg/85 backdrop-blur-md"></div>
+        <div
+          id="overlay-card"
+          class="relative w-[760px] max-w-[90%] bg-white rounded-3xl px-10 py-9 shadow-[0_30px_80px_rgba(0,0,0,0.18)] border border-black/5"
+        >
+          <button
+            id="overlay-close"
+            aria-label="Close"
+            class="absolute top-4 right-4 w-9 h-9 rounded-full text-ink-500 hover:text-ink-900 hover:bg-black/5 flex items-center justify-center"
+          >
+            <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 6l12 12M18 6L6 18"/>
+            </svg>
+          </button>
+          <div id="overlay-content" class="text-left">
+            <p class="text-ink-500 text-sm">Loading…</p>
+          </div>
+        </div>
+      </div>
     </main>
 
     <script src="app.js"></script>
