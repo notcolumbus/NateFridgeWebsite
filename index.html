@@ -34,10 +34,10 @@
     </script>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="bg-bg text-ink-900 font-sans antialiased overflow-hidden min-h-screen flex items-center justify-center">
+  <body class="bg-bg text-ink-900 font-sans antialiased">
     <main
       id="dashboard"
-      class="relative w-[1024px] h-[600px] px-12 flex flex-col items-center justify-center text-center"
+      class="relative w-full min-h-screen px-6 sm:px-12 py-8 flex flex-col items-center justify-center text-center"
     >
       <!-- fullscreen toggle (top-right) -->
       <button
@@ -65,7 +65,8 @@
       <h1
         id="time"
         aria-label="current time"
-        class="my-6 font-bold tracking-[-0.04em] text-[180px] leading-none text-ink-900 select-none"
+        class="my-6 font-bold tracking-[-0.04em] leading-none text-ink-900 select-none"
+        style="font-size: clamp(80px, 19vw, 220px);"
       ></h1>
 
       <!-- weather: icon · temp · highs & lows -->
