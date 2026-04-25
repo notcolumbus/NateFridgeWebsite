@@ -1,0 +1,12 @@
+# Cloudflare deploy config for the Janney fridge dashboard.
+# Pure static site — no Worker code, just HTML/CSS/JS served from the root.
+#
+#   wrangler dev      # local preview at http://localhost:8787
+#   wrangler deploy   # publish to <name>.<account>.workers.dev
+
+name = "nate-fridge"
+compatibility_date = "2026-01-01"
+
+[assets]
+directory = "./"
+not_found_handling = "single-page-application"
