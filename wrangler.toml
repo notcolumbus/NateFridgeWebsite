@@ -4,7 +4,7 @@
 #   wrangler dev      # local preview at http://localhost:8787
 #   wrangler deploy   # publish to <name>.<account>.workers.dev
 
-name = "nate-fridge"
+name = "nate-fridge-website"
 compatibility_date = "2026-01-01"
 
 [assets]
