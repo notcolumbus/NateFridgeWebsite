@@ -1,0 +1,49 @@
+/* Lightweight extras on top of Tailwind. */
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(231, 200, 122, 0.06), transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, rgba(99, 102, 241, 0.08), transparent 60%),
+    #06060a;
+}
+
+/* Fit & center on a 1024x600 panel without scrollbars. */
+#dashboard {
+  box-sizing: border-box;
+}
+
+/* Glass card style for the bottom tiles. */
+.card {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.015)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Subtle pulse for the time digits when they tick. */
+#time {
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+/* Disable text selection on a kiosk display. */
+* {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}

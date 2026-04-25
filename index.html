@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1024, initial-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#0b0b10" />
+    <title>Janney Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+              display: ['Fraunces', 'ui-serif', 'Georgia'],
+            },
+            colors: {
+              ink: {
+                50: '#f5f5f4',
+                300: '#a8a29e',
+                400: '#78716c',
+                500: '#57534e',
+                900: '#0b0b10',
+                950: '#06060a',
+              },
+              accent: '#e7c87a',
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="bg-ink-950 text-ink-50 font-sans antialiased overflow-hidden">
+    <main
+      id="dashboard"
+      class="relative w-[1024px] h-[600px] mx-auto p-10 flex flex-col"
+    >
+      <!-- ambient gradient -->
+      <div class="pointer-events-none absolute inset-0 -z-10">
+        <div
+          class="absolute -top-40 -left-40 w-[640px] h-[640px] rounded-full blur-3xl opacity-30"
+          style="background: radial-gradient(closest-side, #e7c87a, transparent);"
+        ></div>
+        <div
+          class="absolute -bottom-48 -right-32 w-[560px] h-[560px] rounded-full blur-3xl opacity-20"
+          style="background: radial-gradient(closest-side, #4f46e5, transparent);"
+        ></div>
+      </div>
+
+      <!-- top row: date + small status -->
+      <header class="flex items-start justify-between">
+        <div>
+          <p
+            id="date"
+            class="text-ink-300 text-sm tracking-[0.25em] uppercase font-medium"
+          >
+            &nbsp;
+          </p>
+        </div>
+        <div class="flex items-center gap-2 text-ink-300 text-xs tracking-widest uppercase">
+          <span class="inline-block w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_10px_#e7c87a]"></span>
+          <span>Eastern Time</span>
+        </div>
+      </header>
+
+      <!-- hero: time + greeting -->
+      <section class="flex-1 flex flex-col justify-center -mt-2">
+        <h1
+          id="time"
+          class="font-display font-light text-[164px] leading-none tracking-tight text-white"
+        >
+          &nbsp;
+        </h1>
+        <p
+          id="greeting"
+          class="mt-4 text-3xl font-light text-ink-50/90 font-display"
+        >
+          &nbsp;
+        </p>
+      </section>
+
+      <!-- bottom row: weather + next rockets game -->
+      <section class="grid grid-cols-2 gap-5">
+        <!-- Weather card -->
+        <article
+          class="card flex items-center gap-5 px-6 py-5 rounded-2xl"
+        >
+          <div
+            id="weather-icon"
+            class="shrink-0 w-14 h-14 flex items-center justify-center text-3xl"
+          >
+            <svg viewBox="0 0 24 24" class="w-10 h-10 text-ink-300" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[11px] tracking-[0.3em] uppercase text-ink-300">
+              Weather
+            </p>
+            <p class="mt-1 flex items-baseline gap-3">
+              <span id="weather-temp" class="text-4xl font-light text-white">--&deg;</span>
+              <span id="weather-desc" class="text-ink-300 text-sm truncate">Loading…</span>
+            </p>
+          </div>
+          <div class="text-right text-ink-300 text-xs leading-tight">
+            <p id="weather-range">H -- &nbsp; L --</p>
+            <p id="weather-loc" class="mt-1 text-ink-400">—</p>
+          </div>
+        </article>
+
+        <!-- Next Rockets Game card -->
+        <article
+          class="card flex items-center gap-5 px-6 py-5 rounded-2xl"
+        >
+          <div
+            class="shrink-0 w-14 h-14 rounded-full flex items-center justify-center"
+            style="background: radial-gradient(circle at 30% 30%, #ef4444, #7f1d1d);"
+          >
+            <svg viewBox="0 0 24 24" class="w-7 h-7 text-white/95" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="9.2"/>
+              <path d="M3 12c4 0 7-3 7-9M21 12c-4 0-7-3-7-9M3 12c4 0 7 3 7 9M21 12c-4 0-7 3-7 9"/>
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[11px] tracking-[0.3em] uppercase text-ink-300">
+              Next Rockets Game
+            </p>
+            <p class="mt-1 text-white text-xl font-medium tracking-tight">
+              <span id="game-day">Sun, Apr 26</span>
+              <span class="text-ink-400 mx-2">·</span>
+              <span id="game-time">8:30 PM CDT</span>
+            </p>
+          </div>
+          <div id="game-countdown" class="text-right text-ink-300 text-xs leading-tight">
+            <p class="text-accent text-sm font-medium tracking-wide">tip-off</p>
+            <p id="game-rel" class="mt-1 text-ink-400">—</p>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
